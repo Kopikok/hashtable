@@ -23,8 +23,9 @@ class LinkedList:
     1. __init__()
     2. __str__()
     3. __iter__()
-    4. push()
-    5. remove()
+    4. __len__()
+    5. push()
+    6. remove()
     """
     def __init__(self, head=None):
         self.head = head
@@ -43,6 +44,12 @@ class LinkedList:
             yield element
             element = element.next
 
+    def __len__(self):
+        counter = 0
+        for i in self:
+            counter += 1
+        return counter
+
     def push(self, item):
         """
         Вставка элемента в начало связного списка
@@ -52,13 +59,19 @@ class LinkedList:
 
     def remove(self, value):
         """
-        Возврат нового связного списка без элемента value
+        1. Если первый элемент начала списка == ключу, то
+        меняем ссылаемый объект на ссылаемый объект ссылаемого
         """
-        new = LinkedList()
-        for element in self:
-            if element[0] != value:
-                new.push(element)
-        return new
+        if self.head[0] == value:
+            self.head = self.head.next
+        else:
+            for element in self:
+                if element.next is not None:
+                    if element.next[0] == value:
+                        try:
+                            element.next = element.next.next
+                        except AttributeError:
+                            element.next = None
 
 
 class Node(tuple):
@@ -130,8 +143,7 @@ class HashTable(Iteration):
         1. Хешируем, остаток = индекс
         2. Если в ячейке лежит узел, то мы заменяем его
         на объект его ссылки, то есть на None
-        2.1. Иначе мы вызываем метод remove у связного списка и
-        полученным значением заменяем ячейку
+        2.1. Иначе мы вызываем метод remove у связного списка
         """
         s_b = bytearray(str(key), "UTF-8")
         sha_res = sha256(s_b).hexdigest()
@@ -139,5 +151,5 @@ class HashTable(Iteration):
         index = h_s % len(self.__items__)
         if isinstance(self.__items__[index], Node):
             self.__items__[index] = self.__items__[index].next
-        else:
-            self.__items__[index] = self.__items__[index].remove(key)
+        elif isinstance(self.__items__[index], LinkedList):
+            self.__items__[index].remove(key)
