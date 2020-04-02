@@ -1,12 +1,14 @@
 from hashlib import sha256
 
+from filter import BloomFilter
+
 
 class Iteration:
     """
     Итерация для хеш-таблицы
     """
     def __iter__(self):
-        for elem in self.__items__:
+        for elem in self.items:
             if elem is not None and not isinstance(elem, LinkedList):
                 yield elem
             elif elem is not None and isinstance(elem, LinkedList):
@@ -99,7 +101,8 @@ class HashTable(Iteration):
     где x - ключ
     """
     def __init__(self):
-        self.__items__ = [None for i in range(50)]
+        self.filter = BloomFilter()
+        self.items = [None for i in range(50)]
 
     def __contains__(self, item):
         for elem in self:
@@ -109,7 +112,7 @@ class HashTable(Iteration):
 
     def __len__(self):
         length = 0
-        for i in self.__items__:
+        for i in self.items:
             if isinstance(i, LinkedList):
                 length += len(i)
             elif i is not None:
@@ -126,20 +129,21 @@ class HashTable(Iteration):
         вставляем в него наше значение
         2.2 Иначе ячейка заменяется на значение
         """
+        self.filter.add(key)
         s_b = bytearray(str(key), "UTF-8")
         sha_res = sha256(s_b).hexdigest()
         h_s = int(sha_res, 16)
-        index = h_s % len(self.__items__)
+        index = h_s % len(self.items)
         cargo = Node([key, val])
-        if self.__items__[index] is not None and not isinstance(self.__items__[index], LinkedList):
-            buffer = self.__items__[index]
-            self.__items__[index] = LinkedList()
-            self.__items__[index].push(buffer)
-            self.__items__[index].push(cargo)
-        elif self.__items__[index] is not None and isinstance(self.__items__[index], LinkedList):
-            self.__items__[index].push(cargo)
+        if self.items[index] is not None and not isinstance(self.items[index], LinkedList):
+            buffer = self.items[index]
+            self.items[index] = LinkedList()
+            self.items[index].push(buffer)
+            self.items[index].push(cargo)
+        elif self.items[index] is not None and isinstance(self.items[index], LinkedList):
+            self.items[index].push(cargo)
         else:
-            self.__items__[index] = cargo
+            self.items[index] = cargo
 
     def remove(self, key):
         """
@@ -151,8 +155,11 @@ class HashTable(Iteration):
         s_b = bytearray(str(key), "UTF-8")
         sha_res = sha256(s_b).hexdigest()
         h_s = int(sha_res, 16)
-        index = h_s % len(self.__items__)
-        if isinstance(self.__items__[index], Node):
-            self.__items__[index] = self.__items__[index].next
-        elif isinstance(self.__items__[index], LinkedList):
-            self.__items__[index].remove(key)
+        index = h_s % len(self.items)
+        if isinstance(self.items[index], Node):
+            self.items[index] = self.items[index].next
+        elif isinstance(self.items[index], LinkedList):
+            self.items[index].remove(key)
+
+    def pre_contains(self, item):
+        return item in self.filter
